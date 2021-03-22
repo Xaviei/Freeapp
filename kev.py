@@ -8,6 +8,21 @@ from kivy.graphics import Rectangle
 from kivy.core.window import Window
 from kivy.clock import Clock
 
+def collides(rect1,rect2):
+    r1x = rect1[0][0]
+    r1y = rect1[0][1]
+    r2x = rect2[0][0]
+    r2y = rect2[0][1]
+    r1w = rect1[1][0]
+    r1h = rect1[1][1]
+    r2w = rect2[1][0]
+    r2h = rect2[1][1]
+
+    if (r1x < r2x + r2w and r1x + r1w > r2x and r1y < r2y + r2h and r1y + r1h > r2y):
+        return True
+    else:
+        return False
+
 class GameWidget(Widget):
     def __init__(self,**kwargs):
         super().__init__(**kwargs)
@@ -17,6 +32,7 @@ class GameWidget(Widget):
 
         with self.canvas:
             self.player = Rectangle(source='images\Skeleguy01 (1).png', pos=(0,0), size=(100,100))
+            self.enemy = Rectangle(source='images\Enemy_Quark_Fire.png', pos=(400,400), size=(80,80))
 
             self.keysPressed = set()
 
@@ -39,7 +55,7 @@ class GameWidget(Widget):
         currentx = self.player.pos[0]
         currenty = self.player.pos[1]
 
-        step_size = 60 * dt
+        step_size = 200 * dt
 
         if 'w' in self.keysPressed:
             currenty += step_size
@@ -54,6 +70,12 @@ class GameWidget(Widget):
             currentx += step_size
 
         self.player.pos = (currentx, currenty)
+        
+
+        if collides((self.player.pos,self.player.size),(self.enemy.pos,self.enemy.size)):
+            print('colliding!')
+        else:
+            print('no collision')
 
 class MyApp(App):
     def build(self):
