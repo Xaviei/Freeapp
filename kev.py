@@ -7,6 +7,8 @@ from kivy.uix.widget import Widget
 from kivy.graphics import Rectangle
 from kivy.core.window import Window
 from kivy.clock import Clock
+from kivy.core.audio import SoundLoader
+from kivy.uix.label import CoreLabel
 
 def collides(rect1,rect2):
     r1x = rect1[0][0]
@@ -30,13 +32,37 @@ class GameWidget(Widget):
         self._keyboard.bind(on_key_down=self._on_key_down)
         self._keyboard.bind(on_key_up=self._on_key_up)
 
+        self._score_label = CoreLabel(text='Score: 0')
+        self._score_label.refresh()
+
+
         with self.canvas:
             self.player = Rectangle(source='images\Skeleguy01 (1).png', pos=(0,0), size=(100,100))
-            self.enemy = Rectangle(source='images\Enemy_Quark_Fire.png', pos=(400,400), size=(80,80))
+            self._score_instructions = Rectangle(texture=self._score_label.texture, pos=(700,0),size=self._score_label.texture.size)
 
-            self.keysPressed = set()
 
-            Clock.schedule_interval(self.move_step,0)
+        self.keysPressed = set()
+
+        Clock.schedule_interval(self.move_step,0)
+
+        self.sound = SoundLoader.load('placeholder')
+
+        print(self.size)
+    
+    @property
+    def score(self):
+        return self._score_label
+
+    @score.setter
+    def score(self,value):
+        self._score = value
+        self._score_label.text = "Score: " + str(value)
+        self._score_instructions.texture = self._score_label.texture
+        self._score_instructions.size = self._score_label.texture.size
+
+            
+
+
     
     def _on_keyboard_closed(self):
         self._keyboard.unbind(on_key_down=self._on_key_down)
@@ -72,10 +98,6 @@ class GameWidget(Widget):
         self.player.pos = (currentx, currenty)
         
 
-        if collides((self.player.pos,self.player.size),(self.enemy.pos,self.enemy.size)):
-            print('colliding!')
-        else:
-            print('no collision')
 
 class MyApp(App):
     def build(self):
