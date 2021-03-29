@@ -34,6 +34,8 @@ class GameWidget(Widget):
 
         self._score_label = CoreLabel(text='Score: 0')
         self._score_label.refresh()
+        self._score = 0
+
 
 
         with self.canvas:
@@ -42,6 +44,7 @@ class GameWidget(Widget):
 
 
         self.keysPressed = set()
+        self.entities = set()
 
         Clock.schedule_interval(self.move_step,0)
 
@@ -60,6 +63,13 @@ class GameWidget(Widget):
         self._score_instructions.texture = self._score_label.texture
         self._score_instructions.size = self._score_label.texture.size
 
+    def add_entity(self,entity):
+        self._entities.add(entity)
+        self.canvas.add(entity._instruction)
+
+    def remove_entity(self,entity): 
+        if entity in self._entities: 
+            self._entities.remove(entity)
             
 
 
