@@ -42,7 +42,6 @@ class GameWidget(Widget):
 
 
         with self.canvas:
-            self.player = Rectangle(source='images\Skeleguy01 (1).png', pos=(0,0), size=(100,100))
             self._score_instruction = Rectangle(texture=self._score_label.texture, pos=(700,0),size=self._score_label.texture.size)
 
 
@@ -256,8 +255,8 @@ class Enemy(Entity):
 class Explosion(Entity):
     def __init__(self, pos):
         super().__init__()
-        sound = SoundLoader.load #create an asset for the sound of hit)
-        self._source = "assets\hitSpark.png"
+        self.pos = pos
+        self.source = "assets\Hit.png"
         Clock.schedule_once(self._remove_me,0.1)
 
     def _remove_me(self,dt):
@@ -287,7 +286,7 @@ class Player(Entity):
 
     def move_step(self,sender,dt):
         #move 
-        step_size = 200 *dt
+        step_size = 300 *dt
         newx = self.pos[0]
         newy = self.pos[1]
         if "a" in game.keysPressed:
