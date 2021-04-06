@@ -9,6 +9,7 @@ from kivy.core.window import Window
 from kivy.clock import Clock
 from kivy.core.audio import SoundLoader
 from kivy.uix.label import CoreLabel
+import random
 
 def collides(rect1,rect2):
     r1x = rect1[0][0]
@@ -42,7 +43,7 @@ class GameWidget(Widget):
 
         with self.canvas:
             self.player = Rectangle(source='images\Skeleguy01 (1).png', pos=(0,0), size=(100,100))
-            self._score_instructions = Rectangle(texture=self._score_label.texture, pos=(700,0),size=self._score_label.texture.size)
+            self._score_instruction = Rectangle(texture=self._score_label.texture, pos=(700,0),size=self._score_label.texture.size)
 
 
         self.keysPressed = set()
@@ -53,6 +54,15 @@ class GameWidget(Widget):
         #in game Music
         self.sound = SoundLoader.load('placeholder')
 
+        Clock.schedule_interval(self.spawn_enemies,2)
+
+    def spawn_enemies(self, dt):
+        for i in range(5):
+            random_x = random.randint(0, Window.width)
+            y = Window.height
+            random_speed = random.randint(100, 200)
+            self.add_entity(Enemy((random_x, y), random_speed))
+
 
     def _on_frame(self,dt):
         self.dispatch("on_frame",dt)
@@ -62,15 +72,15 @@ class GameWidget(Widget):
     
     @property
     def score(self):
-        return self._score_label
+        return self._score
 
     @score.setter
-    def score(self,value):
+    def score(self, value):
         self._score = value
         self._score_label.text = "Score: " + str(value)
-        self._score_instructions.texture = self._score_label.texture
-        self._score_instructions.size = self._score_label.texture.size
-
+        self._score_label.refresh()
+        self._score_instruction.texture = self._score_label.texture
+        self._score_instruction.size = self._score_label.texture.size
     def add_entity(self,entity):
         self._entities.add(entity)
         self.canvas.add(entity._instruction)
@@ -99,9 +109,9 @@ class GameWidget(Widget):
     def colliding_entities(self,entity):
         result = set()
         for e in self._entities:
-            if self.collides(e,entity) and e == entity:
+            if self.collides(e,entity) and e != entity:
                 result.add(e)
-        result
+        return result
 
 
 
@@ -113,7 +123,7 @@ class GameWidget(Widget):
         self._keyboard = None
 
     def _on_key_down(self,keyboard,keycode,text,modifiers):
-        self.keysPressed.add(text)
+        self.keysPressed.add(keycode[1])
 
     def _on_key_up(self,keyboard,keycode):
         text = keycode[1]
@@ -144,7 +154,7 @@ class Entity(object):
     def __init__(self):
         self._pos = (0,0)
         self._size = (50,50)
-        self._source = 'horse.png'
+        self._source = 'palceholder'
         self._instruction = Rectangle(pos=self._pos,size=self._size,source=self._source)
     
     @property
@@ -155,8 +165,6 @@ class Entity(object):
     def pos(self,value):
         self._pos = value
         self._instruction.pos = self._pos
-
-    game = GameWidget()
 
     @property
     def size(self):
@@ -179,7 +187,6 @@ class Entity(object):
 class Bullet(Entity):
     def __init__(self,pos,speed=300):
         super().__init__()
-        sound = SoundLoader.load #Create sound for bullet
         self._speed = speed
         self.pos = pos
         self.source = "assets\Arrow01 (1).png"
@@ -195,7 +202,7 @@ class Bullet(Entity):
            game.remove_entity(self)
            return
         for e in game.colliding_entities(self):
-            if isinstance(e,Enemy):
+            if isinstance(e, Enemy):
                 game.add_entity(Explosion(self.pos))
                 self.stop_callbacks()
                 game.remove_entity(self)
@@ -208,7 +215,7 @@ class Bullet(Entity):
         step_size = self._speed * dt
         new_x = self.pos[0]
         new_y = self.pos[1] + step_size
-        self.pos = (new_x,new_y)
+        self.pos = (new_x, new_y)
                     
         
 
@@ -219,7 +226,8 @@ class Enemy(Entity):
     def __init__(self,pos,speed=100):
         super().__init__()
         self._speed = speed
-        self.pos = _pos
+        self.pos = pos
+        self.source = "assets\Enemy_Quarkz.png"
         game.bind(on_frame=self.move_step)
 
     def stop_callbacks(self):
@@ -241,7 +249,7 @@ class Enemy(Entity):
         #move
         step_size = self._speed * dt
         new_x = self.pos[0]
-        new_y = self.pos[1] + step_size
+        new_y = self.pos[1] - step_size
         self.pos = (new_x,new_y)
                 
 
@@ -250,7 +258,6 @@ class Explosion(Entity):
         super().__init__()
         sound = SoundLoader.load #create an asset for the sound of hit)
         self._source = "assets\hitSpark.png"
-        sound.play()
         Clock.schedule_once(self._remove_me,0.1)
 
     def _remove_me(self,dt):
@@ -263,12 +270,13 @@ class Player(Entity):
     def __init__(self):
         super().__init__()
         self.source = "assets\Skeleguy01 (1).png"
-        game.bind(on_frame=self.on_frame)
+        game.bind(on_frame=self.move_step)
         self._shoot_event = Clock.schedule_interval(self.shoot_step, 0.5)
         self.pos = (400,0)
 
     def stop_callbacks(self):
-        game.unbind(on_frame=self.on_frame)
+        game.unbind(on_frame=self.move_step)
+        self._shoot_event.cancel()
 
     def shoot_step(self,dt):
         #Shoot
@@ -277,7 +285,7 @@ class Player(Entity):
             y = self.pos[1] + 50
             game.add_entity(Bullet((x, y)))
 
-    def on_frame(self,sender,dt):
+    def move_step(self,sender,dt):
         #move 
         step_size = 200 *dt
         newx = self.pos[0]
@@ -298,6 +306,8 @@ game = GameWidget()
 game.player = Player()
 game.player.pos = (Window.width - Window.width/3, 0)
 game.add_entity(game.player)
+
+
 
 class MyApp(App):
     def build(self):
